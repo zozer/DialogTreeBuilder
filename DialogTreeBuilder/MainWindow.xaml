@@ -10,7 +10,9 @@
         <Canvas Height="404" Width="100" Background="#FF8D8AFF">
             <Button x:Name="Export" Content="Export" Width="80" Height="26" Canvas.Left="10" Canvas.Top="10" Click="Export_Click"/>
             <Button x:Name="Import" Content="Import" Width="80" Height="26" Canvas.Left="10" Canvas.Top="41" Click="Import_Click"/>
+            <Button x:Name="Save" Content="Save" Width="80" Height="26" Canvas.Left="10" Canvas.Top="72" Click="Save_Click"/>
+            <Button x:Name="Load" Content="Load" Width="80" Height="26" Canvas.Left="10" Canvas.Top="103" Click="Load_Click"/>
         </Canvas>
-        <Canvas x:Name="MainCanvas" Height="404" Width="679" Canvas.Left="100" Background="#19000A42" MouseRightButtonUp="MainCanvas_MouseRightButtonUp"/>
+        <Canvas x:Name="MainCanvas" Height="404" Width="679" Canvas.Left="100" Background="#19000A42" MouseLeftButtonDown="MainCanvas_MouseLeftButtonDown"/>
     </Canvas>
 </Window>

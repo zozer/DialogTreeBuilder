@@ -11,7 +11,7 @@ using System.Windows.Shapes;
 
 namespace DialogTreeBuilder
 {
-    public class ChatTreeDisplay
+    public partial class ChatTreeDisplay
     {
         private double barMoveX;
         private double barMoveY;
@@ -26,7 +26,7 @@ namespace DialogTreeBuilder
         private Canvas mainCanvas;
         public Canvas Display { get; private set; }
         public TextBox Message { get; private set; }
-        public bool IsDirect { get; private set; }
+        public bool IsDirect { get => paths.Count == 0; }
         public string Name => Message.Name;
         public bool IsExit { get; private set; }
         private Rectangle moveBar;
@@ -38,7 +38,6 @@ namespace DialogTreeBuilder
             {
                 MainWindow.FirstChat = this;
             }
-            IsDirect = true;
             IsExit = false;
             CreateNewDialogStep();
         }
@@ -47,7 +46,6 @@ namespace DialogTreeBuilder
         {
             mainCanvas = canvas;
             IsFirst = chat.name == "enter";
-            IsDirect = chat?.options.Count == 0;
             IsExit = chat.exit;
             if (!IsFirst)
             {
@@ -85,11 +83,12 @@ namespace DialogTreeBuilder
             };
             TextBox newLabel = new TextBox
             {
-                Name = (chat!=null)?chat.name:(IsFirst) ? "enter" : $"step{count++}",
-                Text = (chat != null)?chat.Message:"new dialog",
+                Name = (chat != null) ? chat.name : (IsFirst) ? "enter" : $"step{count++}",
+                Text = (chat != null) ? chat.Message : "new dialog",
                 Width = 100,
                 Height = 30,
-                Background = Brushes.LightSteelBlue
+                Background = Brushes.LightSteelBlue,
+                Tag = this
             };
             Ellipse AddButton = new Ellipse()
             {
@@ -102,7 +101,7 @@ namespace DialogTreeBuilder
                 Name = "MoveBar",
                 Height = 10,
                 Width = 100,
-                Fill = (chat != null && chat.exit)?Brushes.DarkRed:(IsFirst)?Brushes.DarkGreen:Brushes.DarkBlue
+                Fill = (chat != null && chat.exit) ? Brushes.DarkRed : (IsFirst) ? Brushes.DarkGreen : Brushes.DarkBlue
             };
             Rectangle NextChatButton = new Rectangle()
             {
@@ -117,7 +116,7 @@ namespace DialogTreeBuilder
             }
             CheckBox isExit = new CheckBox()
             {
-                IsChecked = (chat != null)?chat.exit:false,
+                IsChecked = (chat != null) ? chat.exit : false,
                 Height = 10,
                 Width = 10
             };
@@ -127,6 +126,7 @@ namespace DialogTreeBuilder
             AddButton.MouseDown += AddButton_MouseDown;
             MoveBar.MouseMove += MoveBar_MouseMove;
             MoveBar.MouseLeftButtonDown += MoveBar_MouseLeftButtonDown;
+            MoveBar.MouseRightButtonDown += MoveBar_MouseRightButtonDown;
             MoveBar.Cursor = Cursors.SizeAll;
             isExit.Checked += IsExit_Checked;
             isExit.Unchecked += IsExit_Unchecked;
@@ -150,7 +150,8 @@ namespace DialogTreeBuilder
             if (chat == null)
             {
                 AddAtMouse(newArea);
-            } else
+            }
+            else
             {
                 AddAtNextLoc(newArea);
             }
@@ -164,30 +165,6 @@ namespace DialogTreeBuilder
                     AddOption(AddButton, option);
                 }
             }
-        }
-
-        private void NewLabel_LostFocus(object sender, RoutedEventArgs e)
-        {
-            TextBox textBox = sender as TextBox;
-            textBox.Height /= 2;
-            textBox.Width /= 2;
-            textBox.TextWrapping = TextWrapping.NoWrap;
-            Panel.SetZIndex(textBox, (int)textBox.Tag);
-            textBox.Tag = null;
-            Panel.SetZIndex(Display, (int)Display.Tag);
-            Display.Tag = null;
-        }
-
-        private void NewLabel_GotFocus(object sender, RoutedEventArgs e)
-        {
-            TextBox textBox = sender as TextBox;
-            textBox.Height *= 2;
-            textBox.Width *= 2;
-            textBox.TextWrapping = TextWrapping.WrapWithOverflow;
-            textBox.Tag = Panel.GetZIndex(textBox);
-            Display.Tag = Panel.GetZIndex(Display);
-            Panel.SetZIndex(textBox, int.MaxValue);
-            Panel.SetZIndex(Display, int.MaxValue);
         }
 
         private void IsExit_Unchecked(object sender, RoutedEventArgs e)
@@ -206,7 +183,7 @@ namespace DialogTreeBuilder
         {
             if (MainWindow.displays.Count == 1) return;
 
-            Rectangle orgin = e.Source as Rectangle;
+            Rectangle orgin = sender as Rectangle;
             Point centerPoint = orgin.TranslatePoint(new Point(orgin.ActualHeight / 2, orgin.ActualWidth / 2), mainCanvas);
             Point mousePoint = Mouse.GetPosition(mainCanvas);
             TextBox tag = IsDirect ? (orgin.Parent as Canvas).Children.OfType<TextBox>().First(): tag = orgin.Tag as TextBox; ;                
@@ -239,63 +216,46 @@ namespace DialogTreeBuilder
             }
         }
 
-        private void MoveBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-
-            if (isCreatingLine)
-            {
-                isCreatingLine = false;
-                inLines.Add(createdLine);
-                Tuple<TextBox, ChatTreeDisplay> pair = createdLine.Tag as Tuple<TextBox, ChatTreeDisplay>;
-                if (pair.Item2.IsDirect)
-                {
-                    pair.Item2.nextChat = this;
-                } else
-                {
-                    pair.Item2.paths[pair.Item1] = this;
-                }
-                createdLine.Tag = null;
-                createdLine = null;
-                return;
-            }
-            Point loc = Mouse.GetPosition(mainCanvas);
-            barMoveX = loc.X;
-            barMoveY = loc.Y;
-        }
-
-        private void MoveBar_MouseMove(object sender, MouseEventArgs e)
-        {
-            Rectangle bar = e.Source as Rectangle;
-            Canvas area = bar.Parent as Canvas;
-            //sorry! will figure out how to actaully do this later
-            if (e.LeftButton == MouseButtonState.Pressed)
-            {
-                Point loc = Mouse.GetPosition(mainCanvas);
-
-                Canvas.SetLeft(area, Canvas.GetLeft(area) + (loc.X - barMoveX));
-                Canvas.SetTop(area, Canvas.GetTop(area) + (loc.Y - barMoveY));
-                foreach (Line line in outLines)
-                {
-                    line.X1 += loc.X - barMoveX;
-                    line.Y1 += loc.Y - barMoveY;
-                }
-
-                foreach (Line line in inLines)
-                {
-                    line.X2 += loc.X - barMoveX;
-                    line.Y2 += loc.Y - barMoveY;
-                }
-
-                barMoveX = loc.X;
-                barMoveY = loc.Y;
-
-            }
-        }
-
         private void AddButton_MouseDown(object sender, MouseButtonEventArgs e)
         {
             Ellipse button = e.Source as Ellipse;
             AddOption(button);
+        }
+
+        private void CreatedLine_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            Line line = sender as Line;
+            Point mousePos = Mouse.GetPosition(mainCanvas);
+            Menu menu = NewMenu();
+            MenuItem test = DeleteMenuItem(line);
+            test.Click += DeleteLine_Click;
+            menu.Items.Add(test);
+            AddAtMouse(menu);
+        }
+
+        private void DeleteLine_Click(object sender, RoutedEventArgs e)
+        {
+            MenuItem item = sender as MenuItem;
+            mainCanvas.Children.Remove(item.Parent as UIElement);
+            DeleteLine(item.Tag as Line);
+        }
+
+        private void DeleteOption_Click(object sender, RoutedEventArgs e)
+        {
+            MenuItem item = sender as MenuItem;
+            mainCanvas.Children.Remove(item.Parent as UIElement);
+            DeleteOption(item.Tag as TextBox);
+        }
+
+        private void Option_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            TextBox textbox = (sender as Rectangle).Tag as TextBox;
+            Point mousePos = Mouse.GetPosition(mainCanvas);
+            Menu menu = NewMenu();
+            MenuItem test = DeleteMenuItem(textbox);
+            test.Click += DeleteOption_Click;
+            menu.Items.Add(test);
+            AddAtMouse(menu);
         }
 
         private void AddOption(Ellipse button, Option option = null)
@@ -309,12 +269,11 @@ namespace DialogTreeBuilder
                     nextChat.inLines.Clear();
                     nextChat = null;
                 }
-                IsDirect = false;
             }
 
-            Canvas area = button.Parent as Canvas;
             TextBox newLabel = new TextBox
             {
+                Name = $"Option_{paths.Count+1}",
                 Text = (option != null)?option.Message:"new response",
                 Width = 100,
                 Height = 30,
@@ -323,6 +282,9 @@ namespace DialogTreeBuilder
             if (option != null)
             {
                 newLabel.Tag = option;
+            } else
+            {
+                newLabel.Tag = this;
             }
 
             Rectangle nextChatButton = new Rectangle()
@@ -333,7 +295,7 @@ namespace DialogTreeBuilder
                 Fill = Brushes.Black,
                 Tag = newLabel
             };
-
+            nextChatButton.MouseRightButtonDown += Option_MouseRightButtonDown;
             nextChatButton.MouseLeftButtonDown += NextChatButton_MouseLeftButtonDown;
             newLabel.GotKeyboardFocus += NewLabel_GotFocus;
             newLabel.LostKeyboardFocus += NewLabel_LostFocus;
@@ -344,8 +306,8 @@ namespace DialogTreeBuilder
 
             Canvas.SetLeft(newLabel, 0);
             Canvas.SetTop(newLabel, height + 7.5);
-            area.Children.Add(nextChatButton);
-            Panel.SetZIndex(button, area.Children.Add(newLabel));
+            Display.Children.Add(nextChatButton);
+            Panel.SetZIndex(button, Display.Children.Add(newLabel));
 
             paths.Add(newLabel, null);
         }
@@ -358,6 +320,84 @@ namespace DialogTreeBuilder
         public void AddOutLine(Line line)
         {
             outLines.Add(line);
+        }
+
+        public void DeleteOption(TextBox option)
+        {           
+            ChatTreeDisplay end = paths[option];
+            int index = int.Parse(option.Name.Split('_')[1]);
+            Rectangle chatButton = Display.FindChild($"NextStep{index}") as Rectangle;
+            List<TextBox> options = paths.Keys.OrderBy(e => int.Parse(e.Name.Split('_')[1])).ToList();
+            for (int i = index; i < options.Count; i++)
+            {
+                TextBox textBox = options[i];
+                textBox.Name = $"Option_{i}";
+                if (paths[textBox] != null)
+                {
+                    outLines.First(e => (e.Tag as Tuple<TextBox, ChatTreeDisplay>).Item1 == textBox).Y1 -= 30;
+                }
+                Canvas.SetTop(textBox, Canvas.GetTop(textBox) - 30);
+                Rectangle nextChat = Display.FindChild($"NextStep{i + 1}") as Rectangle;
+                nextChat.Name = $"NextStep{i}";
+                Canvas.SetTop(nextChat, Canvas.GetTop(nextChat) - 30);
+            }
+            Ellipse button = Display.Children.OfType<Ellipse>().First();
+            Canvas.SetTop(button, Canvas.GetTop(button) - 30);
+            if (end != null)
+            {
+                Line line = outLines.First(e => (e.Tag as Tuple<TextBox, ChatTreeDisplay>).Item1 == option);
+                DeleteLine(line);
+            } else
+            {
+                paths.Remove(option);
+            }
+            Display.Children.Remove(option);
+            Display.Children.Remove(chatButton);
+        }
+
+        public void DeleteLine(Line line)
+        {
+            Tuple<TextBox, ChatTreeDisplay> pair = line.Tag as Tuple<TextBox, ChatTreeDisplay>;
+            ChatTreeDisplay start = pair.Item1.Tag as ChatTreeDisplay;
+            ChatTreeDisplay end = pair.Item2;
+            if (start.IsDirect)
+            {
+                start.nextChat = null;
+            } else
+            {
+                start.paths.Remove(pair.Item1);
+            }
+            start.outLines.Remove(line);
+            end.inLines.Remove(line);
+            mainCanvas.Children.Remove(line);
+        }
+
+        public void Destroy()
+        {
+            Tuple<TextBox, ChatTreeDisplay> pair;
+            foreach (Line line in outLines)
+            {
+                pair = line.Tag as Tuple<TextBox, ChatTreeDisplay>;
+                pair.Item2.inLines.Remove(line);
+                mainCanvas.Children.Remove(line);
+            }
+            foreach(Line line in inLines)
+            {
+                pair = line.Tag as Tuple<TextBox, ChatTreeDisplay>;
+                ChatTreeDisplay source = pair.Item1.Tag as ChatTreeDisplay;
+                source.inLines.Remove(line);
+                if (source.IsDirect)
+                {
+                    source.nextChat = null;
+                }
+                else
+                {
+                    source.paths.Remove(pair.Item1);
+                }
+                mainCanvas.Children.Remove(line);
+            }
+            mainCanvas.Children.Remove(Display);
+            MainWindow.displays.Remove(this);
         }
 
         public Chat BuildChat()

@@ -31,138 +31,50 @@ namespace DialogTreeBuilder
             ResizeMode = ResizeMode.CanResizeWithGrip;
         }
 
-        private void MainCanvas_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+        private void MainCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             //if (ChatTreeDisplay.isCreatingLine) return;
-            displays.Add(new ChatTreeDisplay(MainCanvas));
-        }
-
-        private void Export_Click(object sender, RoutedEventArgs e)
-        {
-            ChatTreeContainer container = new ChatTreeContainer();
-            foreach (ChatTreeDisplay display in displays)
+            if (e.ClickCount == 2)
             {
-                container.chatTree.Add(display.BuildChat());
-            }
-            XmlSerializer serializer = new XmlSerializer(typeof(ChatTreeContainer));
-            SaveFileDialog saveFile = new SaveFileDialog()
-            {
-                FileName = "New chat tree",
-                DefaultExt = ".xml",
-                Filter = "xml files|*.xml"
-            };
-            bool? result = saveFile.ShowDialog();
-            if (result == true)
-            {
-                using (StreamWriter writer = new StreamWriter(saveFile.FileName))
-                {
-                    serializer.Serialize(writer, container);
-                }
+                displays.Add(new ChatTreeDisplay(MainCanvas));
             }
         }
-
-        private void Import_Click(object sender, RoutedEventArgs e)
-        {
-            if (displays.Count != 0)
-            {
-                MessageBoxResult res = MessageBox.Show("You have unsaved work.\n" +
-                    " Importing a new file will clear your progress without saving." +
-                    "\nDo you wish to proceed?","Warning!",MessageBoxButton.YesNo,MessageBoxImage.Exclamation);
-                if(res == MessageBoxResult.Yes)
-                {
-                    displays.Clear();
-                    MainCanvas.Children.Clear();
-                    FirstChat = null;
-                } else
-                {
-                    return;
-                }
-            }
-            ChatTreeContainer chatTree;
-            XmlSerializer serializer = new XmlSerializer(typeof(ChatTreeContainer));
-            OpenFileDialog openFile = new OpenFileDialog()
-            {
-                DefaultExt = ".xml",
-                Filter = "xml files|*.xml"
-            };
-            bool? result = openFile.ShowDialog();
-            if (result == true)
-            {
-                using (var stream = new FileStream(openFile.FileName, FileMode.Open))
-                {
-                    chatTree = serializer.Deserialize(stream) as ChatTreeContainer;
-                }
-                foreach (Chat chat in chatTree.chatTree)
-                {
-                    displays.Add(new ChatTreeDisplay(MainCanvas, chat));
-                }
-                UpdateLayout();
-                foreach (ChatTreeDisplay display in displays)
-                {
-                    if (!display.IsExit)
-                    {
-                        DrawLines(display);
-                    }
-                }
-            }
-            
-            void DrawLines(ChatTreeDisplay display)
-            {
-                if (display.IsDirect)
-                {
-                    Rectangle source = display.Display.FindChild("NextStep") as Rectangle;
-                    Chat tag = source.Tag as Chat;
-                    ChatTreeDisplay nextChat = displays.First(c => c.Name == tag.nextStep);
-                    DrawLine(source, display, nextChat);
-                    display.nextChat = nextChat;
-                    source.Tag = null;
-                } else
-                {
-                    int count = 1;
-                    List<TextBox> keys = new List<TextBox>(display.paths.Keys);
-                    foreach (TextBox option in keys)
-                    {
-                        Option tag = option.Tag as Option;
-                        Rectangle source = display.Display.FindChild($"NextStep{count++}") as Rectangle;
-                        ChatTreeDisplay nextChat = displays.First(c => c.Name == tag.nextStep);                       
-                        DrawLine(source, display, nextChat);
-                        display.paths[option] = nextChat;
-                        option.Tag = null;
-                    }
-                } 
-            }
-
-            void DrawLine(Rectangle source, ChatTreeDisplay display, ChatTreeDisplay nextChat)
-            {
-                Rectangle stop = nextChat.Display.FindChild("MoveBar") as Rectangle;
-                
-                Point start = source.TranslatePoint(new Point(source.Width / 2, source.Height / 2), MainCanvas);
-                
-                Point end = stop.TranslatePoint(new Point(stop.Width / 2, stop.Height / 2), MainCanvas);
-                Line newLine = PointLine(start, end);
-                Panel.SetZIndex(newLine, -1);
-                MainCanvas.Children.Add(newLine);
-                display.AddOutLine(newLine);
-                nextChat.AddInLine(newLine);
-            }
-        }
-        public static Line PointLine(Point a, Point b)
-        {
-            return new Line()
-            {
-                X1 = a.X,
-                Y1 = a.Y,
-                X2 = b.X,
-                Y2 = b.Y,
-                StrokeThickness = 4,
-                Stroke = Brushes.Black
-            };
-        }
-
         private void Canvas_MouseDown(object sender, MouseButtonEventArgs e)
         {
             MainCanvas.Focusable = true;
             Keyboard.Focus(MainCanvas);
+            List<DependencyObject> hitResultsList = new List<DependencyObject>();
+            VisualTreeHelper.HitTest(MainCanvas, null,
+    new HitTestResultCallback(MyHitTestResult),
+    new PointHitTestParameters(Mouse.GetPosition(MainCanvas)));
+
+            if (hitResultsList.Count > 1)
+            {
+                return;
+            }
+            ClearAllObjects<Menu>(MainCanvas);
+
+            HitTestResultBehavior MyHitTestResult(HitTestResult result)
+            {
+                // Add the hit test result to the list that will be processed after the enumeration.
+                hitResultsList.Add(result.VisualHit);
+                // Set the behavior to return visuals at all z-order levels.
+                return HitTestResultBehavior.Continue;
+            }
         }
+
+        public static void ClearAllObjects<T> (Canvas canvas) where T : UIElement
+        {     
+            IEnumerable<T> list = new List<T>(canvas.Children.OfType<T>());
+            if (list.Count() > 0)
+            {
+                foreach (T el in list)
+                {
+                    canvas.Children.Remove(el);
+                }
+            }
+        }
+
+
     }
 }

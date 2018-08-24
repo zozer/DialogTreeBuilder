@@ -54,6 +54,11 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Label.cs" />
+    <Compile Include="MainWindowExport.cs" />
+    <Compile Include="MainWindowImport.cs" />
+    <Compile Include="MoveBar.cs" />
+    <Compile Include="Utils.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -62,7 +67,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="ChatStep.cs" />
+    <Compile Include="ChatTreeSave.cs" />
     <Compile Include="ChatTreeContainer.cs" />
     <Compile Include="ChatTreeDisplay.cs" />
     <Compile Include="Extensions.cs" />
