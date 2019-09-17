@@ -22,7 +22,8 @@ namespace DialogTreeBuilder
     /// </summary>
     public partial class MainWindow : Window
     {
-
+        private double barMoveX;
+        private double barMoveY;
         public static List<ChatTreeDisplay> displays = new List<ChatTreeDisplay>();
         public static ChatTreeDisplay FirstChat = null;
         public MainWindow()
@@ -43,24 +44,19 @@ namespace DialogTreeBuilder
         {
             MainCanvas.Focusable = true;
             Keyboard.Focus(MainCanvas);
-            List<DependencyObject> hitResultsList = new List<DependencyObject>();
-            VisualTreeHelper.HitTest(MainCanvas, null,
-    new HitTestResultCallback(MyHitTestResult),
-    new PointHitTestParameters(Mouse.GetPosition(MainCanvas)));
 
-            if (hitResultsList.Count > 1)
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                Point point = Mouse.GetPosition(MainCanvas);
+                barMoveX = point.X;
+                barMoveY = point.Y;
+            }
+            if (TotalItemsOver() > 1)
             {
                 return;
             }
             ClearAllObjects<Menu>(MainCanvas);
 
-            HitTestResultBehavior MyHitTestResult(HitTestResult result)
-            {
-                // Add the hit test result to the list that will be processed after the enumeration.
-                hitResultsList.Add(result.VisualHit);
-                // Set the behavior to return visuals at all z-order levels.
-                return HitTestResultBehavior.Continue;
-            }
         }
 
         public static void ClearAllObjects<T> (Canvas canvas) where T : UIElement
@@ -75,6 +71,46 @@ namespace DialogTreeBuilder
             }
         }
 
+        public int TotalItemsOver()
+        {
+            List<DependencyObject> hitResultsList = new List<DependencyObject>();
+            VisualTreeHelper.HitTest(MainCanvas, null,
+    new HitTestResultCallback(MyHitTestResult),
+    new PointHitTestParameters(Mouse.GetPosition(MainCanvas)));
+            return hitResultsList.Count;
+            HitTestResultBehavior MyHitTestResult(HitTestResult result)
+            {
+                // Add the hit test result to the list that will be processed after the enumeration.
+                hitResultsList.Add(result.VisualHit);
+                // Set the behavior to return visuals at all z-order levels.
+                return HitTestResultBehavior.Continue;
+            }
+        }
 
+        private void MainCanvas_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                if (TotalItemsOver() > 1)
+                {
+                    return;
+                }
+                Point loc = Mouse.GetPosition(MainCanvas);
+                foreach (Canvas item in MainCanvas.Children.OfType<Canvas>())
+                {
+                    Canvas.SetLeft(item, Canvas.GetLeft(item) + (loc.X - barMoveX));
+                    Canvas.SetTop(item, Canvas.GetTop(item) + (loc.Y - barMoveY));
+                }
+                foreach (Line line in MainCanvas.Children.OfType<Line>())
+                {
+                    line.X1 += loc.X - barMoveX;
+                    line.Y1 += loc.Y - barMoveY;
+                    line.X2 += loc.X - barMoveX;
+                    line.Y2 += loc.Y - barMoveY;
+                }
+                barMoveX = loc.X;
+                barMoveY = loc.Y;
+            }
+        }
     }
 }

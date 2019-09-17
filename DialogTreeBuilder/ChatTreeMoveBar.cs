@@ -12,15 +12,18 @@ namespace DialogTreeBuilder
 {
     public partial class ChatTreeDisplay
     {
-        private void MoveBar_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        private void OpenHeaderMenu(object sender, MouseButtonEventArgs e)
         {
-            Rectangle header = sender as Rectangle;
+            Canvas button = sender as Canvas;
             Point mousePos = Mouse.GetPosition(mainCanvas);
             Menu menu = NewMenu();
             MenuItem test = DeleteMenuItem(this);
             test.Click += DeleteDisplay_Click;
             menu.Items.Add(test);
-            AddAtMouse(menu);
+            Point topleft = button.TranslatePoint(new Point(0, 0), mainCanvas);
+            Canvas.SetLeft(menu, topleft.X - menu.Width);
+            Canvas.SetTop(menu, topleft.Y);
+            mainCanvas.Children.Add(menu);
         }
 
         private void DeleteDisplay_Click(object sender, RoutedEventArgs e)
@@ -61,14 +64,13 @@ namespace DialogTreeBuilder
         private void MoveBar_MouseMove(object sender, MouseEventArgs e)
         {
             Rectangle bar = e.Source as Rectangle;
-            Canvas area = bar.Parent as Canvas;
             //sorry! will figure out how to actaully do this later
             if (e.LeftButton == MouseButtonState.Pressed)
             {
                 Point loc = Mouse.GetPosition(mainCanvas);
 
-                Canvas.SetLeft(area, Canvas.GetLeft(area) + (loc.X - barMoveX));
-                Canvas.SetTop(area, Canvas.GetTop(area) + (loc.Y - barMoveY));
+                Canvas.SetLeft(Display, Canvas.GetLeft(Display) + (loc.X - barMoveX));
+                Canvas.SetTop(Display, Canvas.GetTop(Display) + (loc.Y - barMoveY));
                 foreach (Line line in outLines)
                 {
                     line.X1 += loc.X - barMoveX;

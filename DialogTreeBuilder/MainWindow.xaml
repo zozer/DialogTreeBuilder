@@ -13,6 +13,6 @@
             <Button x:Name="Save" Content="Save" Width="80" Height="26" Canvas.Left="10" Canvas.Top="72" Click="Save_Click"/>
             <Button x:Name="Load" Content="Load" Width="80" Height="26" Canvas.Left="10" Canvas.Top="103" Click="Load_Click"/>
         </Canvas>
-        <Canvas x:Name="MainCanvas" Height="404" Width="679" Canvas.Left="100" Background="#19000A42" MouseLeftButtonDown="MainCanvas_MouseLeftButtonDown"/>
+        <Canvas x:Name="MainCanvas" Height="404" Width="679" Canvas.Left="100" Background="#19000A42" MouseLeftButtonDown="MainCanvas_MouseLeftButtonDown" MouseMove="MainCanvas_MouseMove"/>
     </Canvas>
 </Window>

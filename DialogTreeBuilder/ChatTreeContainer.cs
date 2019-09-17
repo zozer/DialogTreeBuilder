@@ -41,6 +41,8 @@ namespace DialogTreeBuilder
                 message = value.Trim();
             }
         }
+        [XmlAttribute("tag")]
+        public string tag;
         [XmlAttribute("goto")]
         public string nextStep;
         [XmlAttribute("exit")]

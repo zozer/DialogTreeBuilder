@@ -32,9 +32,16 @@ namespace DialogTreeBuilder
             bool? result = saveFile.ShowDialog();
             if (result == true)
             {
-                using (StreamWriter writer = new StreamWriter(saveFile.FileName))
+                try
                 {
-                    serializer.Serialize(writer, ExportData());
+                    using (StreamWriter writer = new StreamWriter(saveFile.FileName))
+                    {
+                        serializer.Serialize(writer, ExportData());
+                    }
+                } catch (Exception err)
+                {
+                    MessageBox.Show("There has been an error while attempting to export\n" +
+                        "this has most likely been the cause of some end displays not correctly been flagged as ends");
                 }
             }
         }
@@ -52,12 +59,18 @@ namespace DialogTreeBuilder
             bool? result = saveFile.ShowDialog();
             if (result == true)
             {
-                using (StreamWriter writer = new StreamWriter(saveFile.FileName))
+                try { 
+                    using (StreamWriter writer = new StreamWriter(saveFile.FileName))
+                    {
+                        saveData.Serialize(writer, ExportSave());
+                    }
+                    Utils.Compress(new FileInfo(saveFile.FileName));
+                } catch (Exception err)
                 {
-                    saveData.Serialize(writer, ExportSave());
+                    MessageBox.Show("There has been an error while attempting to export\n" +
+                        "this has most likely been the cause of some end displays not correctly been flagged as ends");
                 }
-                Utils.Compress(new FileInfo(saveFile.FileName));
-            }
+        }
         }
 
         private ChatTreeContainer ExportData()

@@ -54,10 +54,11 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Label.cs" />
+    <Compile Include="ChatTreeObjects.cs" />
+    <Compile Include="ChatTreeLabel.cs" />
     <Compile Include="MainWindowExport.cs" />
     <Compile Include="MainWindowImport.cs" />
-    <Compile Include="MoveBar.cs" />
+    <Compile Include="ChatTreeMoveBar.cs" />
     <Compile Include="Utils.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>

@@ -81,15 +81,11 @@ namespace DialogTreeBuilder
                 Width = 100,
                 Height = 45
             };
-            TextBox newLabel = new TextBox
-            {
-                Name = (chat != null) ? chat.name : (IsFirst) ? "enter" : $"step{count++}",
-                Text = (chat != null) ? chat.Message : "new dialog",
-                Width = 100,
-                Height = 30,
-                Background = Brushes.LightSteelBlue,
-                Tag = this
-            };
+
+            TextBox newLabel = NewChatTextBox();
+            newLabel.Name = (chat != null) ? chat.name : (IsFirst) ? "enter" : $"step{count++}";
+            newLabel.Text = (chat != null) ? chat.Message : "new dialog";
+
             Ellipse AddButton = new Ellipse()
             {
                 Height = 15,
@@ -103,13 +99,8 @@ namespace DialogTreeBuilder
                 Width = 100,
                 Fill = (chat != null && chat.exit) ? Brushes.DarkRed : (IsFirst) ? Brushes.DarkGreen : Brushes.DarkBlue
             };
-            Rectangle NextChatButton = new Rectangle()
-            {
-                Name = "NextStep",
-                Height = 10,
-                Width = 10,
-                Fill = Brushes.Black
-            };
+            Rectangle NextChatButton = NewNextChatButton();
+
             if (chat != null && !IsExit && IsDirect)
             {
                 NextChatButton.Tag = chat;
@@ -121,18 +112,23 @@ namespace DialogTreeBuilder
                 Width = 10
             };
 
+            Canvas menuButton = NewMenuOpenButton();
+
             newLabel.GotKeyboardFocus += NewLabel_GotFocus;
             newLabel.LostKeyboardFocus += NewLabel_LostFocus;
             AddButton.MouseDown += AddButton_MouseDown;
             MoveBar.MouseMove += MoveBar_MouseMove;
             MoveBar.MouseLeftButtonDown += MoveBar_MouseLeftButtonDown;
-            MoveBar.MouseRightButtonDown += MoveBar_MouseRightButtonDown;
+            menuButton.MouseLeftButtonDown += OpenHeaderMenu;
             MoveBar.Cursor = Cursors.SizeAll;
             isExit.Checked += IsExit_Checked;
             isExit.Unchecked += IsExit_Unchecked;
             NextChatButton.MouseLeftButtonDown += NextChatButton_MouseLeftButtonDown;
+
             Canvas.SetLeft(MoveBar, 0);
             Canvas.SetTop(MoveBar, -5);
+            Canvas.SetLeft(menuButton, 0);
+            Canvas.SetTop(menuButton, -5);
             Canvas.SetLeft(isExit, 89);
             Canvas.SetTop(isExit, -5);
             Canvas.SetLeft(newLabel, 0);
@@ -147,6 +143,7 @@ namespace DialogTreeBuilder
             newArea.Children.Add(MoveBar);
             newArea.Children.Add(NextChatButton);
             newArea.Children.Add(isExit);
+            newArea.Children.Add(menuButton);
             if (chat == null)
             {
                 AddAtMouse(newArea);
@@ -271,30 +268,20 @@ namespace DialogTreeBuilder
                 }
             }
 
-            TextBox newLabel = new TextBox
-            {
-                Name = $"Option_{paths.Count+1}",
-                Text = (option != null)?option.Message:"new response",
-                Width = 100,
-                Height = 30,
-                Background = Brushes.DarkSlateBlue
-            };
+            TextBox newLabel = NewChatTextBox();
+            newLabel.Name = $"Option_{paths.Count + 1}";
+            newLabel.Text = (option != null) ? option.Message : "new response";
+            newLabel.Background = Brushes.DarkSlateBlue;
+
             if (option != null)
             {
                 newLabel.Tag = option;
-            } else
-            {
-                newLabel.Tag = this;
             }
 
-            Rectangle nextChatButton = new Rectangle()
-            {
-                Name = $"NextStep{paths.Count+1}",
-                Width = 10,
-                Height = 10,
-                Fill = Brushes.Black,
-                Tag = newLabel
-            };
+            Rectangle nextChatButton = NewNextChatButton();
+            nextChatButton.Name += $"{paths.Count + 1}";
+            nextChatButton.Tag = newLabel;
+
             nextChatButton.MouseRightButtonDown += Option_MouseRightButtonDown;
             nextChatButton.MouseLeftButtonDown += NextChatButton_MouseLeftButtonDown;
             newLabel.GotKeyboardFocus += NewLabel_GotFocus;
@@ -412,7 +399,14 @@ namespace DialogTreeBuilder
             {
                 if (IsDirect)
                 {
-                    chat.nextStep = nextChat.Name;
+                    if (nextChat == null)
+                    {
+                        chat.exit = true;
+                    }
+                    else
+                    {
+                        chat.nextStep = nextChat.Name;
+                    }
                     chat.options = null;
                 }
                 else
